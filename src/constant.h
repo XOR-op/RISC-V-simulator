@@ -54,7 +54,7 @@ namespace riscv{
         };
     }
     namespace inst{
-        enum {
+        enum inst_t{
             NOP,
             LUI,AUIPC,JAL,JALR,
             BEQ,BNE,BLT,BGE,BLTU,BGEU,

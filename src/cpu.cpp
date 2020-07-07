@@ -3,15 +3,12 @@
 //
 #include "cpu.h"
 #include "constant.h"
+#include "decoding.h"
 
 using namespace riscv;
-const static dword_t OPCODE_MASK = 0b1111111;
-const static dword_t FUNCT3_MASK = 0b111u << 12u;
-const static dword_t FUNCT7_MASK = 0b1111111u << 25u;
 const static dword_t RS1_MASK = 0b11111u << 15u;
 const static dword_t RS2_MASK = 0b11111u << 20u;
 const static dword_t RD_MASK = 0b11111u << 7u;
-const static dword_t IMM_I_MASK = 0xfffu << 20u;
 const static dword_t IMM_U_MASK = 0xfffffu << 12u;
 bool r1_table[]{[inst::LUI]=false, [inst::AUIPC]=false, [inst::JAL]=false, [inst::JALR]=true, [inst::BEQ]=true, [inst::BNE]=true, [inst::BLT]=true, [inst::BGE]=true, [inst::BLTU]=true, [inst::BGEU]=true, [inst::LB]=true, [inst::LH]=true, [inst::LW]=true, [inst::LBU]=true, [inst::LHU]=true, [inst::ADDI]=true, [inst::SLTI]=true, [inst::SLTIU]=true, [inst::XORI]=true, [inst::ORI]=true, [inst::ANDI]=true, [inst::SB]=true, [inst::SH]=true, [inst::SW]=true, [inst::SLLI]=true, [inst::SRLI]=true, [inst::SRAI]=true, [inst::ADD]=true, [inst::SUB]=true, [inst::SLT]=true, [inst::SLTU]=true, [inst::XOR]=true, [inst::OR]=true, [inst::AND]=true, [inst::SLL]=true, [inst::SRL]=true, [inst::SRA]=true,};
 bool r2_table[]{[inst::LUI]=false, [inst::AUIPC]=false, [inst::JAL]=false, [inst::JALR]=false, [inst::BEQ]=true, [inst::BNE]=true, [inst::BLT]=true, [inst::BGE]=true, [inst::BLTU]=true, [inst::BGEU]=true, [inst::LB]=false, [inst::LH]=false, [inst::LW]=false, [inst::LBU]=false, [inst::LHU]=false, [inst::ADDI]=false, [inst::SLTI]=false, [inst::SLTIU]=false, [inst::XORI]=false, [inst::ORI]=false, [inst::ANDI]=false, [inst::SB]=true, [inst::SH]=true, [inst::SW]=true, [inst::SLLI]=false, [inst::SRLI]=false, [inst::SRAI]=false, [inst::ADD]=true, [inst::SUB]=true, [inst::SLT]=true, [inst::SLTU]=true, [inst::XOR]=true, [inst::OR]=true, [inst::AND]=true, [inst::SLL]=true, [inst::SRL]=true, [inst::SRA]=true,};
@@ -19,72 +16,55 @@ bool rd_table[]{[inst::LUI]=true, [inst::AUIPC]=true, [inst::JAL]=true, [inst::J
 char imm_table[]{[inst::LUI]='U', [inst::AUIPC]='U', [inst::JAL]='J', [inst::JALR]='I', [inst::BEQ]='B', [inst::BNE]='B', [inst::BLT]='B', [inst::BGE]='B', [inst::BLTU]='B', [inst::BGEU]='B', [inst::LB]='I', [inst::LH]='I', [inst::LW]='I', [inst::LBU]='I', [inst::LHU]='I', [inst::ADDI]='I', [inst::SLTI]='I', [inst::SLTIU]='I', [inst::XORI]='I', [inst::ORI]='I', [inst::ANDI]='I', [inst::SB]='S', [inst::SH]='S', [inst::SW]='S', [inst::SLLI]='T', [inst::SRLI]='T', [inst::SRAI]='T', [inst::ADD]='R', [inst::SUB]='R', [inst::SLT]='R', [inst::SLTU]='R', [inst::XOR]='R', [inst::OR]='R', [inst::AND]='R', [inst::SLL]='R', [inst::SRL]='R', [inst::SRA]='R',};
 const static dword_t TEST_ = 0xffffffff;
 
-dword_t select_op(dword_t inst) {
-    dword_t rt=inst::NOP;
-    dword_t ID_opcode = inst & OPCODE_MASK;
-    dword_t ID_funct3 = (inst & FUNCT3_MASK) >> 12;
-    dword_t ID_funct7 = (inst & FUNCT7_MASK) >> 25;
-    switch (ID_opcode) {
-        case op::LUI:
-            rt = inst::LUI;
-            break;
-        case op::AUIPC:
-            rt = inst::AUIPC;
-            break;
-        case op::JAL:
-            rt = inst::JAL;
-            break;
-        case op::JALR:
-            rt = inst::JALR;
-            break;
-        case op::BRANCH: {
-            dword_t arr[]{[BRANCH::BEQ]=inst::BEQ, [BRANCH::BNE]=inst::BNE, [BRANCH::BLT]=inst::BLT, [BRANCH::BGE]=inst::BGE, [BRANCH::BLTU]=inst::BLTU, [BRANCH::BGEU]=inst::BGEU,};
-            rt = arr[ID_funct3];
+void cpu::run() {
+    IF_ID_inst=ID_EX_op=EX_MEM_op=MEM_WB_op=inst::NOP;
+    try {
+        for (counter = 0; true; ++counter) {
+            // to simulate parallelization, WB must be called before ID
+            clockIn(stall<STALL_IF);
+            if (stall < STALL_IF)
+                IF_stage();
+            clockIn(stall<STALL_ID);
+            if (stall < STALL_ID)
+                ID_stage();
+            clockIn(stall<STALL_EX);
+            if (stall < STALL_EX)
+                EX_stage();
+            clockIn(stall<STALL_MEM);
+            if(stall<STALL_MEM)
+                MEM_stage();
+            clockIn();
+            WB_stage();
+            // subtract stall counter
+            if (stall_counter > 0) {
+                --stall_counter;
+                if (!stall_counter)stall = NO_STALL;
+            }
+            stall_request.set(this);
         }
-            break;
-        case op::LOAD: {
-            dword_t arr[]{[LOAD::LB]=inst::LB, [LOAD::LH]=inst::LH, [LOAD::LW]=inst::LW,[LOAD::LBU]=inst::LBU, [LOAD::LHU]=inst::LHU,};
-            rt = arr[ID_funct3];
-        }
-            break;
-        case op::STORE: {
-            dword_t arr[]{[STORE::SB]=inst::SB, [STORE::SH]=inst::SH, [STORE::SW]=inst::SW,};
-            rt = arr[ID_funct3];
-        }
-            break;
-        case op::ARITHMETIC_IMM: {
-            dword_t arr[]{[ARITHMETIC_IMM::ADDI]=inst::ADDI, [ARITHMETIC_IMM::SLTI]=inst::SLTI, [ARITHMETIC_IMM::SLTIU]=inst::SLTIU, [ARITHMETIC_IMM::XORI]=inst::XORI, [ARITHMETIC_IMM::ORI]=inst::ORI, [ARITHMETIC_IMM::ANDI]=inst::ANDI, [ARITHMETIC_IMM::SLLI]=inst::SLLI, [ARITHMETIC_IMM::SRLI_SRAI]=inst::SRLI};
-            rt = arr[ID_funct3];
-            if (ID_funct3 == ARITHMETIC_IMM::SRLI_SRAI)
-                rt = ID_funct7 == ARITHMETIC_IMM::FUNC7_SRAI ? inst::SRAI : inst::SRLI;
-        }
-            break;
-        case op::ARITHMETIC: {
-            dword_t arr[]{[ARITHMETIC::ADD_SUB]=inst::ADD, [ARITHMETIC::SLT]=inst::SLT, [ARITHMETIC::SLTU]=inst::SLTU, [ARITHMETIC::XOR]=inst::XOR, [ARITHMETIC::OR]=inst::OR, [ARITHMETIC::AND]=inst::AND, [ARITHMETIC::SLL]=inst::SLL, [ARITHMETIC::SRL_SRA]=inst::SRL,};
-            rt = arr[ID_funct3];
-            if (ID_funct3 == ARITHMETIC::SRL_SRA)rt = ID_funct7 == ARITHMETIC::FUNC7_SRA ? inst::SRA : inst::SRL;
-            if (ID_funct3 == ARITHMETIC::ADD_SUB)rt = ID_funct7 == ARITHMETIC::FUNC7_ADD ? inst::ADD : inst::SUB;
-        }
-            break;
-        default:
-            // error
-            throw std::logic_error("WRONG OPCODE");
+    } catch (terminal_exception& e) {
+        return;
     }
-    assert(rt!=inst::NOP);
-    return rt;
 }
+
 void cpu::clockIn(bool go) {
     if(!go)return;
     if(stall<STALL_ID) {
         ID_inst = IF_ID_inst, ID_pc = IF_ID_pc;
-    } else ID_inst=inst::NOP;
+    }
+//    else ID_inst=inst::NOP;
     if(stall<STALL_EX) {
         EX_op = ID_EX_op, EX_r1 = ID_EX_r1, EX_r2 = ID_EX_r2, EX_rd = ID_EX_rd, EX_imm = ID_EX_imm, EX_pc = ID_EX_pc;
-    } else EX_op=inst::NOP;
+        // todo forwarding
+    }
+//    else EX_op=inst::NOP;
     if(stall<STALL_MEM) {
         MEM_op = EX_MEM_op, MEM_rd = EX_MEM_rd, MEM_value = EX_MEM_output, MEM_r2 = EX_MEM_r2;
-    } else MEM_op=inst::NOP;
+    }
+//    else MEM_op=inst::NOP;
     WB_op=MEM_WB_op,WB_reg=MEM_WB_output,WB_rd=MEM_WB_rd;
+    EX_EX_forward.reset();
+    MEM_EX_forward.reset();
 }
 void cpu::IF_stage() {
     assert(pc<=0x20000);
@@ -99,20 +79,6 @@ void cpu::IF_stage() {
     if(IF_ID_inst==0x00c68223)throw terminal_exception();
     pc+=4;
 }
-dword_t b_decode(sgn_dword_t a) {
-    sgn_dword_t mid = (((a >> 20) & 0xffffffe0) | (a >> 7 & 0x1f));
-    mid &= 0xfffff7ff;
-    return (mid | ((a & 0x80) << 4)) & 0xfffffffe;
-}
-dword_t j_decode(sgn_dword_t a) {
-    sgn_dword_t mid = (a >> 20);
-    mid &= 0xfff007fe;
-    mid|=((a&0x100000)>>9);
-    return mid|(a&0x000ff000);
-}
-dword_t i_decode(sgn_dword_t a) {
-    return ((sgn_dword_t) (a & IMM_I_MASK)) >> 20;
-}
 
 
 
@@ -121,11 +87,11 @@ void cpu::ID_stage() {
     ID_EX_op = select_op(ID_inst);
     assert(ID_EX_op);
     if (r1_table[ID_EX_op])ID_EX_r1 = registers[(ID_inst & RS1_MASK) >> 15];
-    else ID_EX_r1 = TEST_;
+    else ID_EX_r1 = 0;
     if (r2_table[ID_EX_op])ID_EX_r2 = registers[(ID_inst & RS2_MASK) >> 20];
-    else ID_EX_r2 = TEST_;
+    else ID_EX_r2 = 0;
     if (rd_table[ID_EX_op])ID_EX_rd = (ID_inst & RD_MASK) >> 7;
-    else ID_EX_rd = TEST_;
+    else ID_EX_rd = 0;
     ID_EX_imm = TEST_;
     ID_EX_pc=ID_pc;
     switch (imm_table[ID_EX_op]) {
@@ -286,6 +252,7 @@ void cpu::EX_stage() {
     EX_MEM_op=EX_op;
     EX_MEM_rd=EX_rd;
     EX_MEM_r2=EX_r2;
+    EX_EX_forward.set(EX_MEM_rd,EX_MEM_output);
 }
 
 
@@ -293,39 +260,80 @@ void cpu::EX_stage() {
 void cpu::MEM_stage() {
     using namespace inst;
     if(MEM_op==NOP)return;
-    MEM_WB_op=MEM_op;
-    MEM_WB_rd=MEM_rd;
-    MEM_WB_output=MEM_value;
-    // todo 3 cycles simulation
-    switch (MEM_op) {
-        case LB:{
-            MEM_WB_output=memory->read8s(MEM_value);
-        }break;
-        case LH:{
-            MEM_WB_output=memory->read16s(MEM_value);
-        }break;
-        case LW:{
-            MEM_WB_output=memory->read32s(MEM_value);
-        }break;
-        case LBU:{
-            MEM_WB_output=memory->read8(MEM_value);
-        }break;
-        case LHU:{
-            MEM_WB_output=memory->read16(MEM_value);
-        }break;
-        case SB:{
-            memory->write8(MEM_value, MEM_r2 & 0xff);
-        }break;
-        case SH:{
-            memory->write16(MEM_value, MEM_r2 & 0xffff);
-        }break;
-        case SW:{
-            memory->write32(MEM_value, MEM_r2);
-        }break;
-        default:
-            return; // no bubble
+    // preset
+    MEM_WB_op = MEM_op;
+    MEM_WB_rd = MEM_rd;
+    MEM_WB_output = MEM_value;
+    if(MEM_ACCESS_counter>=1){
+        --MEM_ACCESS_counter;
+        if(MEM_ACCESS_counter){
+            // this cycle is 2->1 cycle, so skipped
+            MEM_WB_op=inst::NOP;
+            return;
+        } else {
+            // restore registers from backup
+            MEM_WB_op = MEM_INNER_op;
+            MEM_WB_rd = MEM_INNER_rd;
+            switch (MEM_WB_op) {
+                case LB: {
+                    MEM_WB_output = memory->read8s(MEM_value);
+                }
+                    break;
+                case LH: {
+                    MEM_WB_output = memory->read16s(MEM_value);
+                }
+                    break;
+                case LW: {
+                    MEM_WB_output = memory->read32s(MEM_value);
+                }
+                    break;
+                case LBU: {
+                    MEM_WB_output = memory->read8(MEM_value);
+                }
+                    break;
+                case LHU: {
+                    MEM_WB_output = memory->read16(MEM_value);
+                }
+                    break;
+                case SB: {
+                    memory->write8(MEM_value, MEM_INNER_r2 & 0xff);
+                }
+                    break;
+                case SH: {
+                    memory->write16(MEM_value, MEM_INNER_r2 & 0xffff);
+                }
+                    break;
+                case SW: {
+                    memory->write32(MEM_value, MEM_INNER_r2);
+                }
+                    break;
+                default:
+                    throw std::logic_error("?");
+            }
+            MEM_EX_forward.set(MEM_rd, MEM_value);
+        }
+    }else {
+        switch (MEM_op) {
+            case LB:
+            case LH:
+            case LW:
+            case LBU:
+            case LHU:
+            case SB:
+            case SH:
+            case SW:
+                // left 2 cycle
+                MEM_INNER_r2=MEM_r2;
+                MEM_INNER_rd=MEM_rd;
+                MEM_INNER_op=MEM_op;
+                MEM_ACCESS_counter = 2;
+                stall_request(STALL_EX, 2);
+                MEM_WB_op = inst::NOP;
+                break;
+            default:
+                MEM_EX_forward.set(MEM_rd, MEM_value);
+        }
     }
-    //todo  bubble
 }
 
 
@@ -334,41 +342,20 @@ void cpu::WB_stage() {
     using namespace inst;
     if(WB_op==NOP)return;
     switch (WB_op) {
-        case LUI:
-        case AUIPC:
-        case JAL:
-        case JALR:
-        case LB:
-        case LH:
-        case LW:
-        case LBU:
-        case LHU:
-        case ADDI:
-        case SLTI:
-        case SLTIU:
-        case XORI:
-        case ORI:
-        case ANDI:
-        case SLLI:
-        case SRLI:
-        case SRAI:
-        case ADD:
-        case SUB:
-        case SLT:
-        case SLTU:
-        case XOR:
-        case OR:
-        case AND:
-        case SLL:
-        case SRL:
-        case SRA:
+        case LUI:case AUIPC:case JAL:case JALR:case LB:
+        case LH:case LW:case LBU:case LHU:case ADDI:
+            case SLTI:case SLTIU:case XORI:case ORI:case ANDI:
+        case SLLI:case SRLI:case SRAI:
+            case ADD:case SUB:case SLT:case SLTU:case XOR:case OR:case AND:
+        case SLL:case SRL:case SRA:
             assert(WB_rd<32);
             if(WB_rd!=0)
                 registers[WB_rd]=WB_reg;
             break;
+        default:
+            break;
     }
 }
-
 
 
 cpu::cpu(struct memory* mem_ptr) {
@@ -377,3 +364,5 @@ cpu::cpu(struct memory* mem_ptr) {
     memset(registers,-1,sizeof(registers));
     registers[0]=0;
 }
+
+
