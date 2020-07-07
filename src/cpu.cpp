@@ -73,10 +73,17 @@ dword_t select_op(dword_t inst) {
     assert(rt!=inst::NOP);
     return rt;
 }
-void cpu::clockIn() {
-    ID_inst=IF_ID_inst,ID_pc=IF_ID_pc;
-    EX_op=ID_EX_op,EX_r1=ID_EX_r1,EX_r2=ID_EX_r2,EX_rd=ID_EX_rd,EX_imm=ID_EX_imm,EX_pc=ID_EX_pc;
-    MEM_op=EX_MEM_op, MEM_rd=EX_MEM_rd, MEM_value=EX_MEM_output,MEM_r2=EX_MEM_r2;
+void cpu::clockIn(bool go) {
+    if(!go)return;
+    if(stall<STALL_ID) {
+        ID_inst = IF_ID_inst, ID_pc = IF_ID_pc;
+    } else ID_inst=inst::NOP;
+    if(stall<STALL_EX) {
+        EX_op = ID_EX_op, EX_r1 = ID_EX_r1, EX_r2 = ID_EX_r2, EX_rd = ID_EX_rd, EX_imm = ID_EX_imm, EX_pc = ID_EX_pc;
+    } else EX_op=inst::NOP;
+    if(stall<STALL_MEM) {
+        MEM_op = EX_MEM_op, MEM_rd = EX_MEM_rd, MEM_value = EX_MEM_output, MEM_r2 = EX_MEM_r2;
+    } else MEM_op=inst::NOP;
     WB_op=MEM_WB_op,WB_reg=MEM_WB_output,WB_rd=MEM_WB_rd;
 }
 void cpu::IF_stage() {
@@ -84,9 +91,11 @@ void cpu::IF_stage() {
     assert(registers[0]==0);
     IF_ID_inst = memory->read32(pc);
     IF_ID_pc=pc;
+#ifndef N_DEBUG
     std::stringstream ss;std::string str;
     ss<<std::hex<<IF_ID_inst;ss>>str;
     inst_history.emplace_back(str);
+#endif
     if(IF_ID_inst==0x00c68223)throw terminal_exception();
     pc+=4;
 }
@@ -108,6 +117,7 @@ dword_t i_decode(sgn_dword_t a) {
 
 
 void cpu::ID_stage() {
+    if(ID_inst==inst::NOP)return;
     ID_EX_op = select_op(ID_inst);
     assert(ID_EX_op);
     if (r1_table[ID_EX_op])ID_EX_r1 = registers[(ID_inst & RS1_MASK) >> 15];
@@ -150,6 +160,7 @@ void cpu::ID_stage() {
 
 void cpu::EX_stage() {
     using namespace inst;
+    if(EX_op==NOP)return;
     switch (EX_op) {
         case LUI:{
             EX_MEM_output=EX_imm;
@@ -281,9 +292,11 @@ void cpu::EX_stage() {
 
 void cpu::MEM_stage() {
     using namespace inst;
+    if(MEM_op==NOP)return;
     MEM_WB_op=MEM_op;
     MEM_WB_rd=MEM_rd;
     MEM_WB_output=MEM_value;
+    // todo 3 cycles simulation
     switch (MEM_op) {
         case LB:{
             MEM_WB_output=memory->read8s(MEM_value);
@@ -309,13 +322,17 @@ void cpu::MEM_stage() {
         case SW:{
             memory->write32(MEM_value, MEM_r2);
         }break;
+        default:
+            return; // no bubble
     }
+    //todo  bubble
 }
 
 
 
 void cpu::WB_stage() {
     using namespace inst;
+    if(WB_op==NOP)return;
     switch (WB_op) {
         case LUI:
         case AUIPC:

@@ -2,23 +2,21 @@
 #include <fstream>
 #include "memory.h"
 #include "cpu.h"
+
 using namespace std;
 using namespace riscv;
-//#define DEBUG
+//#define N_DEBUG
 int main() {
     memory mem;
-#ifdef DEBUG
-    ifstream ifs("../riscv-data/pi.data");
+#ifndef N_DEBUG
+    ifstream ifs("../riscv-data/sample.data");
     mem.open(ifs);
 #else
     mem.open(cin);
 #endif
     cpu instance(&mem);
-    try{
-        instance.run();
-    } catch (terminal_exception& e) {
-        cout<<(instance.registers[10]&255u)<<endl;
-    }
+    instance.run();
+    cout << (instance.registers[10] & 255u) << endl;
 
     return 0;
 }
