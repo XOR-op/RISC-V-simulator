@@ -1,0 +1,51 @@
+//
+// Created by Vortox Oganesson on 7/6/20.
+//
+
+#ifndef RISC_V_SIMULATOR_CPU_H
+#define RISC_V_SIMULATOR_CPU_H
+#include "typedef.h"
+#include "memory.h"
+#include <vector>
+namespace riscv{
+    struct cpu{
+        memory* memory;
+        dword_t registers[32];
+        dword_t pc;
+        dword_t IF_ID_inst,IF_ID_pc;
+        dword_t ID_EX_op,ID_EX_r1,ID_EX_r2,ID_EX_imm,ID_EX_rd,ID_EX_pc;
+        dword_t EX_MEM_op,EX_MEM_output,EX_MEM_rd,EX_MEM_r2;
+        dword_t MEM_WB_output,MEM_WB_rd,MEM_WB_op;
+        dword_t ID_inst,ID_pc;
+        dword_t EX_op,EX_r1,EX_r2,EX_imm,EX_rd,EX_pc;
+        dword_t MEM_op,MEM_value,MEM_rd,MEM_r2;
+        dword_t WB_reg,WB_rd,WB_op;
+        byte_t stall;
+        int counter=0;
+        const static byte_t STALL_IF=1,STALL_ID=1<<1,STALL_EX=1<<2,STALL_MEM=1<<3,STALL_WB=1<<4;
+        void clockIn(); // read inter-stage registers into stage registers
+        void IF_stage();
+        void ID_stage();
+        void EX_stage();
+        void MEM_stage();
+        void WB_stage();
+        std::vector<std::string> inst_history;
+        void run(){
+            // modify first
+            for(counter=0;;++counter){
+                clockIn();
+                IF_stage();
+                clockIn();
+                ID_stage();
+                clockIn();
+                EX_stage();
+                clockIn();
+                MEM_stage();
+                clockIn();
+                WB_stage();
+            }
+        }
+        explicit cpu(struct memory* mem_ptr);
+    };
+}
+#endif //RISC_V_SIMULATOR_CPU_H
