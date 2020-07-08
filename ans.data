@@ -20,11 +20,17 @@ manyarguments.c
 40
 multiarray.c
 115
+naive.c
+94
 pi.c
 137
 qsort.c
 105
+queens.c
+171
 statement_test.c
 50
+superloop.c
+134
 tak.c
 186

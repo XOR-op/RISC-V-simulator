@@ -76,3 +76,14 @@ dword_t riscv::j_decode(sgn_dword_t a) {
 dword_t riscv::i_decode(sgn_dword_t a) {
     return ((sgn_dword_t) (a & IMM_I_MASK)) >> 20;
 }
+
+inst::inst_t riscv::select_jmp(dword_t inst) {
+    switch (inst&OPCODE_MASK) {
+        case op::JAL:
+            return riscv::inst::JAL;
+        case op::AUIPC:
+            return riscv::inst::AUIPC;
+        default:
+            return riscv::inst::NOP;
+    }
+}

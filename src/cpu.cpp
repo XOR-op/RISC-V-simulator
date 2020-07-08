@@ -54,18 +54,18 @@ void cpu::clockIn(bool go) {
     if (stall < STALL_ID) {
         ID_inst = IF_ID_inst, ID_pc = IF_ID_pc;
     }
-    else ID_inst=inst::NOP;
+    else ID_inst=inst::HUG;
     if (stall < STALL_EX) {
         EX_op = ID_EX_op,  EX_rd = ID_EX_rd, EX_imm = ID_EX_imm, EX_pc = ID_EX_pc;
 //        EX_rA=ID_EX_rA,EX_rB=ID_EX_rB;
         EX_rA=multiplexer(ID_EX_r1,ID_EX_rA,EX_EX_forward,MEM_EX_forward);
         EX_rB=multiplexer(ID_EX_r2,ID_EX_rB,EX_EX_forward,MEM_EX_forward);
     }
-    else EX_op=inst::NOP;
+    else EX_op=inst::HUG;
     if (stall < STALL_MEM) {
         MEM_op = EX_MEM_op, MEM_rd = EX_MEM_rd, MEM_value = EX_MEM_output, MEM_rB = EX_MEM_rB;
     }
-    else MEM_op=inst::NOP;
+    else MEM_op=inst::HUG;
     WB_op = MEM_WB_op, WB_reg = MEM_WB_output, WB_rd = MEM_WB_rd;
     EX_EX_forward.reset();
     MEM_EX_forward.reset();
@@ -83,12 +83,26 @@ void cpu::IF_stage() {
     inst_history.emplace_back(str);
 #endif
     if (IF_ID_inst == END_INST)throw terminal_exception();
-    pc += 4;
+    dword_t rsl=select_jmp(IF_ID_inst);
+    if(rsl!=inst::NOP){
+        if(rsl==inst::JAL){
+            pc+=j_decode(IF_ID_inst);
+            assert(pc <= 0x20000);
+        } else{
+            // AUIPC
+            pc+=IF_ID_inst&IMM_U_MASK;
+        }
+    } else
+        pc += 4;
 }
 
 
 void cpu::ID_stage() {
-    if (ID_inst == inst::NOP)return;
+    if (ID_inst == inst::HUG)return;
+    else if(ID_inst==inst::NOP){
+        ID_EX_op=inst::NOP;
+        return;
+    }
     ID_EX_op = select_op(ID_inst);
     assert(ID_EX_op);
     ID_EX_r1 = r1_table[ID_EX_op] ? (ID_inst & RS1_MASK) >> 15 : 0;
@@ -129,21 +143,24 @@ void cpu::ID_stage() {
 
 void cpu::EX_stage() {
     using namespace inst;
-    if (EX_op == NOP)return;
+    if (EX_op == HUG)return;
+    else if(EX_op==NOP){
+        EX_MEM_op=NOP;
+        return;
+    }
     switch (EX_op) {
         case LUI: {
             EX_MEM_output = EX_imm;
         }
             break;
         case AUIPC: {
-            pc = EX_pc+EX_imm;
-            EX_MEM_output = pc;
+            EX_MEM_output = EX_pc+4;
+//            pc = EX_pc+EX_imm;
         }
             break;
         case JAL: {
             EX_MEM_output = EX_pc+4;
-            pc = EX_pc+EX_imm;
-            assert(pc <= 0x20000);
+//            pc = EX_pc+EX_imm;
         }
             break;
         case JALR: {
@@ -292,13 +309,18 @@ void cpu::EX_stage() {
     EX_MEM_op = EX_op;
     EX_MEM_rd = EX_rd;
     EX_MEM_rB = EX_rB;
-    EX_EX_forward.set(EX_MEM_rd, EX_MEM_output);
+    if(EX_rd)
+        EX_EX_forward.set(EX_MEM_rd, EX_MEM_output);
 }
 
 
 void cpu::MEM_stage() {
     using namespace inst;
-    if (MEM_op == NOP)return;
+    if (MEM_op == HUG)return;
+    else if(MEM_op==NOP){
+        MEM_WB_op=NOP;
+        return;
+    }
     // preset
     MEM_WB_op = MEM_op;
     MEM_WB_rd = MEM_rd;
@@ -350,7 +372,8 @@ void cpu::MEM_stage() {
                 default:
                     throw std::logic_error("?");
             }
-            MEM_EX_forward.set(MEM_rd, MEM_value);
+            if(MEM_rd)
+                MEM_EX_forward.set(MEM_rd, MEM_value);
         }
     } else {
         switch (MEM_op) {
@@ -381,7 +404,7 @@ void cpu::MEM_stage() {
 
 void cpu::WB_stage() {
     using namespace inst;
-    if (WB_op == NOP)return;
+    if (WB_op == NOP||WB_op==HUG)return;
     switch (WB_op) {
         case LUI:
         case AUIPC:
@@ -431,5 +454,5 @@ cpu::cpu(struct memory* mem_ptr) {
 
 dword_t cpu::multiplexer(dword_t reg_name, dword_t value, cpu::forwarding EX_EX, cpu::forwarding MEM_EX) {
     assert(EX_EX.reg_name==0||EX_EX.reg_name!=MEM_EX.reg_name);
-    return reg_name==0?0:EX_EX.reg_name==reg_name?EX_EX.value:(MEM_EX.reg_name==reg_name?MEM_EX.value:value);
+    return reg_name==0?0:MEM_EX.reg_name==reg_name?MEM_EX.value:(EX_EX.reg_name==reg_name?EX_EX.value:value);
 }

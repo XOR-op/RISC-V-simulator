@@ -1,4 +1,4 @@
-for file in `ls riscv-data/|grep '\.c'`; do
+for file in `ls riscv-data/testcases/|grep '\.c'`; do
     echo "${file}"
-    cat "riscv-data/${file}"|grep 'return.*//'|awk '{print $6}'
+    cat "riscv-data/testcases/${file}"|grep 'return.*//'|awk '{print $6}'
 done

@@ -15,7 +15,7 @@ with open('ans.data') as file:
 print('=====init finished=====')
 for k, v in dic.items():
     print(k[:-5])
-    cmd = "cat riscv-data/" + k+' | ./cmake-build-debug/simulate '
+    cmd = "cat riscv-data/testcases/" + k+' | ./cmake-build-debug/simulate '
     ans = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE).stdout.read()
     if len(ans)>0:
         ans=ans[:-1]

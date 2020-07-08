@@ -12,8 +12,8 @@
 
 namespace riscv {
     struct cpu {
-//        const static dword_t END_INST=0x0ff00513;
-        const static dword_t END_INST=0x00c68223;
+        const static dword_t END_INST=0x0ff00513;
+//        const static dword_t END_INST=0x00c68223;
         memory* memory;
         // registers *r1=rA, *r2=rB
         dword_t registers[32];

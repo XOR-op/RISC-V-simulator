@@ -10,6 +10,7 @@
 
 namespace riscv{
     inst::inst_t select_op(dword_t inst);
+    inst::inst_t select_jmp(dword_t inst); // AUIPC & JAL
     dword_t b_decode(sgn_dword_t a);
     dword_t j_decode(sgn_dword_t a);
     dword_t i_decode(sgn_dword_t a);
