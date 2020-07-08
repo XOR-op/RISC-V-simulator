@@ -10,6 +10,7 @@ int main() {
     memory mem;
 #ifndef N_DEBUG
     ifstream ifs("../riscv-data/sample.data");
+    if(ifs.bad())throw std::runtime_error("File open failed");
     mem.open(ifs);
 #else
     mem.open(cin);

@@ -8,7 +8,6 @@ void memory::open(std::istream& is) {
     int cur=0,tmp;
     std::string buf;
     while (std::getline(is,buf)){
-
         if(buf[0]=='@'){
             std::stringstream ss;
             ss<<std::hex<<buf.substr(1);

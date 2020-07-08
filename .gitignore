@@ -2,3 +2,5 @@
 /riscv-data/
 /cmake-build-debug/
 /.idea/
+/*.zip
+/testcases/
