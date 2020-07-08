@@ -43,7 +43,6 @@ void cpu::run() {
                 if (!stall_counter)stall = NO_STALL;
             }
             stall_request.set(this);
-            // READ after LOAD hazard
             if(stall==NO_STALL) {
                 switch (EX_MEM_op) {
                     case inst::LB:
@@ -51,7 +50,8 @@ void cpu::run() {
                     case inst::LH:
                     case inst::LHU:
                     case inst::LW:
-                        if (ID_EX_r1 == EX_MEM_rd || ID_EX_r2 == EX_MEM_rd) {
+                        if ((ID_EX_r1 == EX_MEM_rd || ID_EX_r2 == EX_MEM_rd)&&EX_MEM_rd!=0) {
+                            // READ after LOAD hazard
                             assert(stall == NO_STALL);
                             stall_request(STALL_EX, 1);
                         }
