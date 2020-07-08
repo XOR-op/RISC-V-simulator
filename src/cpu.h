@@ -54,7 +54,7 @@ namespace riscv {
             dword_t value;
             void set(dword_t n, dword_t v) { reg_name = n, value = v; }
             void reset() { reg_name = 0;value=0; }
-        }EX_EX_forward,MEM_EX_forward;
+        }EX_forward,MEM_forward;
 
         // multiplexer
         dword_t multiplexer(dword_t reg_name,dword_t value,forwarding EX_EX,forwarding MEM_EX);

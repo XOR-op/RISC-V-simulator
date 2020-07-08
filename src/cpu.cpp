@@ -43,6 +43,24 @@ void cpu::run() {
                 if (!stall_counter)stall = NO_STALL;
             }
             stall_request.set(this);
+            // READ after LOAD hazard
+            if(stall==NO_STALL) {
+                switch (EX_MEM_op) {
+                    case inst::LB:
+                    case inst::LBU:
+                    case inst::LH:
+                    case inst::LHU:
+                    case inst::LW:
+                        if (ID_EX_r1 == EX_MEM_rd || ID_EX_r2 == EX_MEM_rd) {
+                            assert(stall == NO_STALL);
+                            stall_request(STALL_EX, 1);
+                        }
+                    default:
+                        break;
+                }
+            } else{
+                assert(stall==STALL_EX);
+            }
         }
     } catch (terminal_exception& e) {
         return;
@@ -53,22 +71,18 @@ void cpu::clockIn(bool go) {
     if (!go)return;
     if (stall < STALL_ID) {
         ID_inst = IF_ID_inst, ID_pc = IF_ID_pc;
-    }
-    else ID_inst=inst::HUG;
+    } else ID_inst = inst::HUG;
     if (stall < STALL_EX) {
-        EX_op = ID_EX_op,  EX_rd = ID_EX_rd, EX_imm = ID_EX_imm, EX_pc = ID_EX_pc;
-//        EX_rA=ID_EX_rA,EX_rB=ID_EX_rB;
-        EX_rA=multiplexer(ID_EX_r1,ID_EX_rA,EX_EX_forward,MEM_EX_forward);
-        EX_rB=multiplexer(ID_EX_r2,ID_EX_rB,EX_EX_forward,MEM_EX_forward);
-    }
-    else EX_op=inst::HUG;
+        EX_op = ID_EX_op, EX_rd = ID_EX_rd, EX_imm = ID_EX_imm, EX_pc = ID_EX_pc;
+        EX_rA = multiplexer(ID_EX_r1, ID_EX_rA, EX_forward, MEM_forward);
+        EX_rB = multiplexer(ID_EX_r2, ID_EX_rB, EX_forward, MEM_forward);
+    } else EX_op = inst::HUG;
     if (stall < STALL_MEM) {
         MEM_op = EX_MEM_op, MEM_rd = EX_MEM_rd, MEM_value = EX_MEM_output, MEM_rB = EX_MEM_rB;
-    }
-    else MEM_op=inst::HUG;
+    } else MEM_op = inst::HUG;
     WB_op = MEM_WB_op, WB_reg = MEM_WB_output, WB_rd = MEM_WB_rd;
-    EX_EX_forward.reset();
-    MEM_EX_forward.reset();
+    EX_forward.reset();
+    MEM_forward.reset();
 }
 void cpu::IF_stage() {
     assert(pc <= 0x20000);
@@ -83,14 +97,14 @@ void cpu::IF_stage() {
     inst_history.emplace_back(str);
 #endif
     if (IF_ID_inst == END_INST)throw terminal_exception();
-    dword_t rsl=select_jmp(IF_ID_inst);
-    if(rsl!=inst::NOP){
-        if(rsl==inst::JAL){
-            pc+=j_decode(IF_ID_inst);
+    dword_t rsl = select_jmp(IF_ID_inst);
+    if (rsl != inst::NOP) {
+        if (rsl == inst::JAL) {
+            pc += j_decode(IF_ID_inst);
             assert(pc <= 0x20000);
-        } else{
+        } else {
             // AUIPC
-            pc+=IF_ID_inst&IMM_U_MASK;
+            pc += IF_ID_inst & IMM_U_MASK;
         }
     } else
         pc += 4;
@@ -99,8 +113,8 @@ void cpu::IF_stage() {
 
 void cpu::ID_stage() {
     if (ID_inst == inst::HUG)return;
-    else if(ID_inst==inst::NOP){
-        ID_EX_op=inst::NOP;
+    else if (ID_inst == inst::NOP) {
+        ID_EX_op = inst::NOP;
         return;
     }
     ID_EX_op = select_op(ID_inst);
@@ -109,7 +123,7 @@ void cpu::ID_stage() {
     ID_EX_rA = registers[ID_EX_r1];
     ID_EX_r2 = r2_table[ID_EX_op] ? (ID_inst & RS2_MASK) >> 20 : 0;
     ID_EX_rB = registers[ID_EX_r2];
-    ID_EX_rd =rd_table[ID_EX_op]? (ID_inst & RD_MASK) >> 7:0;
+    ID_EX_rd = rd_table[ID_EX_op] ? (ID_inst & RD_MASK) >> 7 : 0;
     ID_EX_imm = TEST_;
     ID_EX_pc = ID_pc;
     switch (imm_table[ID_EX_op]) {
@@ -144,8 +158,8 @@ void cpu::ID_stage() {
 void cpu::EX_stage() {
     using namespace inst;
     if (EX_op == HUG)return;
-    else if(EX_op==NOP){
-        EX_MEM_op=NOP;
+    else if (EX_op == NOP) {
+        EX_MEM_op = NOP;
         return;
     }
     switch (EX_op) {
@@ -155,17 +169,15 @@ void cpu::EX_stage() {
             break;
         case AUIPC: {
             EX_MEM_output = EX_pc+4;
-//            pc = EX_pc+EX_imm;
         }
             break;
         case JAL: {
             EX_MEM_output = EX_pc+4;
-//            pc = EX_pc+EX_imm;
         }
             break;
         case JALR: {
             EX_MEM_output = EX_pc+4;
-            pc = EX_rA+EX_imm;
+            pc = (EX_rA+EX_imm)&0xfffffffe;
         }
             break;
         case BEQ: {
@@ -309,16 +321,16 @@ void cpu::EX_stage() {
     EX_MEM_op = EX_op;
     EX_MEM_rd = EX_rd;
     EX_MEM_rB = EX_rB;
-    if(EX_rd)
-        EX_EX_forward.set(EX_MEM_rd, EX_MEM_output);
+    if (EX_rd)
+        EX_forward.set(EX_MEM_rd, EX_MEM_output);
 }
 
 
 void cpu::MEM_stage() {
     using namespace inst;
     if (MEM_op == HUG)return;
-    else if(MEM_op==NOP){
-        MEM_WB_op=NOP;
+    else if (MEM_op == NOP) {
+        MEM_WB_op = NOP;
         return;
     }
     // preset
@@ -372,8 +384,8 @@ void cpu::MEM_stage() {
                 default:
                     throw std::logic_error("?");
             }
-            if(MEM_rd)
-                MEM_EX_forward.set(MEM_rd, MEM_value);
+            if (MEM_rd)
+                MEM_forward.set(MEM_rd, MEM_value);
         }
     } else {
         switch (MEM_op) {
@@ -396,7 +408,7 @@ void cpu::MEM_stage() {
                 MEM_WB_op = inst::NOP;
                 break;
             default:
-                MEM_EX_forward.set(MEM_rd, MEM_value);
+                MEM_forward.set(MEM_rd, MEM_value);
         }
     }
 }
@@ -404,7 +416,7 @@ void cpu::MEM_stage() {
 
 void cpu::WB_stage() {
     using namespace inst;
-    if (WB_op == NOP||WB_op==HUG)return;
+    if (WB_op == NOP || WB_op == HUG)return;
     switch (WB_op) {
         case LUI:
         case AUIPC:
@@ -453,6 +465,7 @@ cpu::cpu(struct memory* mem_ptr) {
 
 
 dword_t cpu::multiplexer(dword_t reg_name, dword_t value, cpu::forwarding EX_EX, cpu::forwarding MEM_EX) {
-    assert(EX_EX.reg_name==0||EX_EX.reg_name!=MEM_EX.reg_name);
-    return reg_name==0?0:MEM_EX.reg_name==reg_name?MEM_EX.value:(EX_EX.reg_name==reg_name?EX_EX.value:value);
+    assert(EX_EX.reg_name == 0 || EX_EX.reg_name != MEM_EX.reg_name);
+    return reg_name == 0 ? 0 : MEM_EX.reg_name == reg_name ? MEM_EX.value : (EX_EX.reg_name == reg_name ? EX_EX.value
+                                                                                                        : value);
 }
