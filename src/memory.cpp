@@ -2,7 +2,8 @@
 // Created by Vortox Oganesson on 7/6/20.
 //
 #include "memory.h"
-
+#include <cstring>
+#include <cstdlib>
 using namespace riscv;
 void memory::open(std::istream& is) {
     bzero(mem, sizeof(mem));
