@@ -21,22 +21,23 @@ const static dword_t TEST_ = 0xffffffff;
 void cpu::run() {
     IF_ID_inst = ID_EX_op = EX_MEM_op = MEM_WB_op = inst::NOP;
     try {
-        for (counter = 0; true; ++counter) {
+        for (counter = 0; timeout>0; ++counter) {
             // to simulate parallelization, WB must be called before ID
-            clockIn(stall < STALL_IF);
+            clockIn();
+//            clockIn(stall < STALL_IF);
             if (stall < STALL_IF)
                 IF_stage();
-            clockIn(stall < STALL_ID);
+//            clockIn(stall < STALL_ID);
+            WB_stage();
             if (stall < STALL_ID)
                 ID_stage();
-            clockIn(stall < STALL_EX);
+//            clockIn(stall < STALL_EX);
             if (stall < STALL_EX)
                 EX_stage();
-            clockIn(stall < STALL_MEM);
+//            clockIn(stall < STALL_MEM);
             if (stall < STALL_MEM)
                 MEM_stage();
-            clockIn();
-            WB_stage();
+//            clockIn();
             // subtract stall counter
             if (stall_counter > 0) {
                 --stall_counter;
@@ -53,7 +54,8 @@ void cpu::run() {
                         if ((ID_EX_r1 == EX_MEM_rd || ID_EX_r2 == EX_MEM_rd)&&EX_MEM_rd!=0) {
                             // READ after LOAD hazard
                             assert(stall == NO_STALL);
-                            stall_request(STALL_EX, 1);
+                            stall_request(STALL_EX, RAL_STALL,1);
+                            stall_request.set(this);
                         }
                     default:
                         break;
@@ -72,18 +74,27 @@ void cpu::clockIn(bool go) {
     if (stall < STALL_ID) {
         ID_inst = IF_ID_inst, ID_pc = IF_ID_pc;
     } else ID_inst = inst::HUG;
+    EX_rA = multiplexer(ID_EX_r1, ID_EX_rA, EX_forward, MEM_forward);
+    EX_rB = multiplexer(ID_EX_r2, ID_EX_rB, EX_forward, MEM_forward);
+    ID_EX_rA=EX_rA,ID_EX_rB=EX_rB; // save forwarding data to avoid loss due to stall
+    if (stall < STALL_MEM) {
+        MEM_op = EX_MEM_op, MEM_rd = EX_MEM_rd, MEM_value = EX_MEM_ALU_output, MEM_rB = EX_MEM_rB;
+    } else MEM_op = inst::HUG;
     if (stall < STALL_EX) {
         EX_op = ID_EX_op, EX_rd = ID_EX_rd, EX_imm = ID_EX_imm, EX_pc = ID_EX_pc;
-        EX_rA = multiplexer(ID_EX_r1, ID_EX_rA, EX_forward, MEM_forward);
-        EX_rB = multiplexer(ID_EX_r2, ID_EX_rB, EX_forward, MEM_forward);
-    } else EX_op = inst::HUG;
-    if (stall < STALL_MEM) {
-        MEM_op = EX_MEM_op, MEM_rd = EX_MEM_rd, MEM_value = EX_MEM_output, MEM_rB = EX_MEM_rB;
-    } else MEM_op = inst::HUG;
+    } else {
+        EX_op = inst::HUG;
+        if(stall_info==RAL_STALL) {
+            // info been fetched
+            EX_MEM_rd = 0;
+            EX_MEM_op = inst::NOP;
+        }
+    }
     WB_op = MEM_WB_op, WB_reg = MEM_WB_output, WB_rd = MEM_WB_rd;
     EX_forward.reset();
     MEM_forward.reset();
 }
+
 void cpu::IF_stage() {
     assert(pc <= 0x20000);
     assert(registers[0] == 0);
@@ -96,7 +107,12 @@ void cpu::IF_stage() {
     ss >> str;
     inst_history.emplace_back(str);
 #endif
-    if (IF_ID_inst == END_INST)throw terminal_exception();
+    if (IF_ID_inst == END_INST||timeout<5){
+//        throw terminal_exception();
+        IF_ID_inst=inst::NOP;
+        --timeout;
+        return;
+    }
     dword_t rsl = select_jmp(IF_ID_inst);
     if (rsl != inst::NOP) {
         if (rsl == inst::JAL) {
@@ -157,26 +173,27 @@ void cpu::ID_stage() {
 
 void cpu::EX_stage() {
     using namespace inst;
-    if (EX_op == HUG)return;
-    else if (EX_op == NOP) {
+//    if (EX_op == HUG)return;else
+    if (EX_op == NOP||EX_op==HUG) {
         EX_MEM_op = NOP;
+        EX_MEM_rd=0;
         return;
     }
     switch (EX_op) {
         case LUI: {
-            EX_MEM_output = EX_imm;
+            EX_MEM_ALU_output = EX_imm;
         }
             break;
         case AUIPC: {
-            EX_MEM_output = EX_pc+4;
+            EX_MEM_ALU_output = EX_pc+4;
         }
             break;
         case JAL: {
-            EX_MEM_output = EX_pc+4;
+            EX_MEM_ALU_output = EX_pc+4;
         }
             break;
         case JALR: {
-            EX_MEM_output = EX_pc+4;
+            EX_MEM_ALU_output = EX_pc+4;
             pc = (EX_rA+EX_imm)&0xfffffffe;
         }
             break;
@@ -205,114 +222,114 @@ void cpu::EX_stage() {
         }
             break;
         case LB: {
-            EX_MEM_output = EX_rA+EX_imm;
+            EX_MEM_ALU_output = EX_rA+EX_imm;
         }
             break;
         case LH: {
-            EX_MEM_output = EX_rA+EX_imm;
+            EX_MEM_ALU_output = EX_rA+EX_imm;
         }
             break;
         case LW: {
-            EX_MEM_output = EX_rA+EX_imm;
+            EX_MEM_ALU_output = EX_rA+EX_imm;
         }
             break;
         case LBU: {
-            EX_MEM_output = EX_rA+EX_imm;
+            EX_MEM_ALU_output = EX_rA+EX_imm;
         }
             break;
         case LHU: {
-            EX_MEM_output = EX_rA+EX_imm;
+            EX_MEM_ALU_output = EX_rA+EX_imm;
         }
             break;
         case ADDI: {
-            EX_MEM_output = EX_rA+EX_imm;
+            EX_MEM_ALU_output = EX_rA+EX_imm;
         }
             break;
         case SLTIU: {
-            EX_MEM_output = EX_rA < EX_imm;
+            EX_MEM_ALU_output = EX_rA < EX_imm;
         }
             break;
         case SLTI: {
-            EX_MEM_output = (sgn_dword_t) EX_rA < (sgn_dword_t) EX_imm;
+            EX_MEM_ALU_output = (sgn_dword_t) EX_rA < (sgn_dword_t) EX_imm;
         }
             break;
         case XORI: {
-            EX_MEM_output = EX_rA ^ EX_imm;
+            EX_MEM_ALU_output = EX_rA ^ EX_imm;
         }
             break;
         case ORI: {
-            EX_MEM_output = EX_rA | EX_imm;
+            EX_MEM_ALU_output = EX_rA | EX_imm;
         }
             break;
         case ANDI: {
-            EX_MEM_output = EX_rA & EX_imm;
+            EX_MEM_ALU_output = EX_rA & EX_imm;
         }
             break;
         case SB: {
-            EX_MEM_output = EX_rA+EX_imm;
+            EX_MEM_ALU_output = EX_rA+EX_imm;
         }
             break;
         case SH: {
-            EX_MEM_output = EX_rA+EX_imm;
+            EX_MEM_ALU_output = EX_rA+EX_imm;
         }
             break;
         case SW: {
-            EX_MEM_output = EX_rA+EX_imm;
+            EX_MEM_ALU_output = EX_rA+EX_imm;
         }
             break;
         case SLLI: {
-            EX_MEM_output = EX_rA << EX_imm;
+            EX_MEM_ALU_output = EX_rA << EX_imm;
         }
             break;
         case SRLI: {
-            EX_MEM_output = EX_rA >> EX_imm;
+            EX_MEM_ALU_output = EX_rA >> EX_imm;
         }
             break;
         case SRAI: {
-            EX_MEM_output = ((sgn_dword_t) EX_rA) >> EX_imm;
+            EX_MEM_ALU_output = ((sgn_dword_t) EX_rA) >> EX_imm;
         }
             break;
         case ADD: {
-            EX_MEM_output = EX_rA+EX_rB;
+            EX_MEM_ALU_output = EX_rA+EX_rB;
         }
             break;
         case SUB: {
-            EX_MEM_output = EX_rA-EX_rB;
+            EX_MEM_ALU_output = EX_rA-EX_rB;
         }
             break;
         case SLT: {
-            EX_MEM_output = (sgn_dword_t) EX_rA < (sgn_dword_t) EX_rB;
+            EX_MEM_ALU_output = (sgn_dword_t) EX_rA < (sgn_dword_t) EX_rB;
         }
             break;
         case SLTU: {
-            EX_MEM_output = EX_rA < EX_rB;
+            EX_MEM_ALU_output = EX_rA < EX_rB;
         }
             break;
         case XOR: {
-            EX_MEM_output = EX_rA ^ EX_rB;
+            EX_MEM_ALU_output = EX_rA ^ EX_rB;
         }
             break;
         case OR: {
-            EX_MEM_output = EX_rA | EX_rB;
+            EX_MEM_ALU_output = EX_rA | EX_rB;
 
         }
             break;
         case AND: {
-            EX_MEM_output = EX_rA & EX_rB;
+            EX_MEM_ALU_output = EX_rA & EX_rB;
 
         }
             break;
         case SLL: {
-            EX_MEM_output = EX_rA << EX_rB;
+            EX_MEM_ALU_output = EX_rA << EX_rB;
 
         }
             break;
         case SRL: {
-            EX_MEM_output = EX_rA >> EX_rB;
+            EX_MEM_ALU_output = EX_rA >> EX_rB;
         }
             break;
         case SRA: {
-            EX_MEM_output = ((sgn_dword_t) EX_rA) >> EX_rB;
+            EX_MEM_ALU_output = ((sgn_dword_t) EX_rA) >> EX_rB;
         }
             break;
         default:
@@ -321,22 +338,13 @@ void cpu::EX_stage() {
     EX_MEM_op = EX_op;
     EX_MEM_rd = EX_rd;
     EX_MEM_rB = EX_rB;
-    if (EX_rd)
-        EX_forward.set(EX_MEM_rd, EX_MEM_output);
+    if (EX_rd&&!access_mem_table[EX_op])
+        EX_forward.set(EX_MEM_rd, EX_MEM_ALU_output);
 }
 
 
 void cpu::MEM_stage() {
     using namespace inst;
-    if (MEM_op == HUG)return;
-    else if (MEM_op == NOP) {
-        MEM_WB_op = NOP;
-        return;
-    }
-    // preset
-    MEM_WB_op = MEM_op;
-    MEM_WB_rd = MEM_rd;
-    MEM_WB_output = MEM_value;
     if (MEM_ACCESS_counter >= 1) {
         --MEM_ACCESS_counter;
         if (MEM_ACCESS_counter) {
@@ -384,10 +392,19 @@ void cpu::MEM_stage() {
                 default:
                     throw std::logic_error("?");
             }
-            if (MEM_rd)
-                MEM_forward.set(MEM_rd, MEM_value);
+            if (MEM_WB_rd)
+                MEM_forward.set(MEM_WB_rd, MEM_WB_output);
         }
     } else {
+        if (MEM_op == HUG)return;
+        else if (MEM_op == NOP) {
+            MEM_WB_op = NOP;
+            return;
+        }
+        // preset
+        MEM_WB_op = MEM_op;
+        MEM_WB_rd = MEM_rd;
+        MEM_WB_output = MEM_value;
         switch (MEM_op) {
             case LB:
             case LH:
@@ -404,7 +421,7 @@ void cpu::MEM_stage() {
                 assert(MEM_value <= 0x20000);
                 MEM_INNER_loc = MEM_value;
                 MEM_ACCESS_counter = 2;
-                stall_request(STALL_EX, 2);
+                stall_request(STALL_EX, MEM_WAIT,2);
                 MEM_WB_op = inst::NOP;
                 break;
             default:

@@ -14,19 +14,20 @@ namespace riscv {
     struct cpu {
         const static dword_t END_INST=0x0ff00513;
 //        const static dword_t END_INST=0x00c68223;
+        int timeout=5; // finish timeout
         memory* memory;
         // registers *r1=rA, *r2=rB
         dword_t registers[32];
         dword_t pc;
+        inst::inst_t ID_EX_op,EX_MEM_op,MEM_WB_op,EX_op,MEM_op,WB_op,MEM_INNER_op;
         dword_t IF_ID_inst, IF_ID_pc;
+        dword_t  ID_inst,ID_pc;
         dword_t  ID_EX_rA, ID_EX_rB, ID_EX_imm, ID_EX_rd, ID_EX_pc,ID_EX_r1,ID_EX_r2;
-        inst::inst_t ID_EX_op,EX_MEM_op,MEM_INNER_op,MEM_WB_op,EX_op,MEM_op,WB_op;
-        dword_t  EX_MEM_output, EX_MEM_rd, EX_MEM_rB;
+        dword_t  EX_rA, EX_rB, EX_imm, EX_rd, EX_pc;
+        dword_t  EX_MEM_ALU_output, EX_MEM_rd, EX_MEM_rB;
+        dword_t  MEM_value, MEM_rd, MEM_rB;
         dword_t MEM_INNER_rd,MEM_INNER_rB,MEM_INNER_loc,MEM_ACCESS_counter=0;
         dword_t MEM_WB_output, MEM_WB_rd;
-        dword_t  ID_inst,ID_pc;
-        dword_t  EX_rA, EX_rB, EX_imm, EX_rd, EX_pc;
-        dword_t  MEM_value, MEM_rd, MEM_rB;
         dword_t WB_reg, WB_rd;
 
 
@@ -34,17 +35,23 @@ namespace riscv {
         enum STALL_STAT {
             NO_STALL, STALL_IF, STALL_ID, STALL_EX, STALL_MEM
         };
+        enum STALL_INFO{
+            NO,MEM_WAIT,RAL_STALL
+        };
         STALL_STAT stall = NO_STALL;
+        STALL_INFO stall_info=NO;
         int stall_counter = 0;
 
         struct stall_request_t {
             STALL_STAT my_stall;
+            STALL_INFO info;
             int my_stall_counter;
-            void operator()(STALL_STAT s,int round){my_stall=s;my_stall_counter=round;}
+            void operator()(STALL_STAT s,STALL_INFO i,int round){
+                my_stall=s;my_stall_counter=round;info=i;}
             void set(cpu* parent){
                 if(my_stall!=NO_STALL)
-                    parent->stall=my_stall,parent->stall_counter=my_stall_counter;
-                my_stall=NO_STALL,my_stall_counter=0;
+                    parent->stall=my_stall,parent->stall_counter=my_stall_counter,parent->stall_info=info;
+                my_stall=NO_STALL,my_stall_counter=0,info=NO;
             }
         }stall_request;
 
