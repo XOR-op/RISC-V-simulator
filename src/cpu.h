@@ -23,8 +23,8 @@ namespace riscv {
         inst::inst_t ID_EX_op,EX_MEM_op,MEM_WB_op,EX_op,MEM_op,WB_op,MEM_INNER_op;
         dword_t IF_ID_inst, IF_ID_pc;
         dword_t  ID_inst,ID_pc;
-        dword_t  ID_EX_rA, ID_EX_rB, ID_EX_imm, ID_EX_rd, ID_EX_pc,ID_EX_r1,ID_EX_r2,ID_EX_is_jmp;
-        dword_t  EX_rA, EX_rB, EX_imm, EX_rd, EX_pc,EX_is_jmp;
+        dword_t  ID_EX_rA, ID_EX_rB, ID_EX_imm, ID_EX_rd, ID_EX_pc,ID_EX_r1,ID_EX_r2;
+        dword_t  EX_rA, EX_rB, EX_imm, EX_rd, EX_pc;
         dword_t  EX_MEM_ALU_output, EX_MEM_rd, EX_MEM_rB;
         dword_t  MEM_value, MEM_rd, MEM_rB;
         dword_t MEM_INNER_rd,MEM_INNER_rB,MEM_INNER_loc,MEM_ACCESS_counter=0;
@@ -33,7 +33,7 @@ namespace riscv {
 
         // branch clear pipeline
         enum {NONE,CLEAR_IF_ID,CLEAR_IF_EX}clear_stat;
-        bool ID_EX_is_jmp_bit;
+        bool ID_EX_is_jmp_bit,EX_is_jmp_bit;
         predictor pre;
 
         // stall handling

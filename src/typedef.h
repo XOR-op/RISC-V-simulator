@@ -11,6 +11,5 @@ namespace riscv{
     typedef uint8_t byte_t;
     typedef uint32_t dword_t;
     typedef int32_t sgn_dword_t;
-    struct terminal_exception: public std::exception{};
 }
 #endif //RISC_V_SIMULATOR_TYPEDEF_H

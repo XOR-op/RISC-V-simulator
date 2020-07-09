@@ -15,6 +15,7 @@ void cpu::run() {
         WB_stage();
         if (stall < STALL_ID)
             ID_stage();
+        // ID need to be before EX
         if (stall < STALL_EX)
             EX_stage();
         if (stall < STALL_MEM)
@@ -70,8 +71,8 @@ void cpu::clockIn(bool go) {
         MEM_op = EX_MEM_op, MEM_rd = EX_MEM_rd, MEM_value = EX_MEM_ALU_output, MEM_rB = EX_MEM_rB;
     } else MEM_op = inst::HUG;
     if (stall < STALL_EX) {
-        EX_is_jmp=ID_EX_is_jmp;
-        EX_op = ID_EX_op, EX_rd = ID_EX_rd, EX_imm = ID_EX_imm, EX_pc = ID_EX_pc;EX_is_jmp=ID_EX_is_jmp;
+        EX_is_jmp_bit=ID_EX_is_jmp_bit;
+        EX_op = ID_EX_op, EX_rd = ID_EX_rd, EX_imm = ID_EX_imm, EX_pc = ID_EX_pc;
     } else {
         EX_op = inst::HUG;
         if (stall_info == RAL_STALL) {

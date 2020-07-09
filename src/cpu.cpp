@@ -128,7 +128,6 @@ void cpu::EX_stage() {
         return;
     }
     bool hit = false;
-    ID_EX_is_jmp_bit = false;
     switch (EX_op) {
         case LUI: {
             EX_MEM_ALU_output = EX_imm;
@@ -287,7 +286,8 @@ void cpu::EX_stage() {
             throw std::logic_error("WRONG OP!");
     }
     if (branch_table[EX_op] && EX_op != END_I) {
-        if (hit ^ EX_is_jmp) {
+        pre.set(EX_pc, hit);
+        if (hit ^ EX_is_jmp_bit) {
             // wrong
             clear_stat = CLEAR_IF_EX;
             pc = hit ? EX_pc+EX_imm : EX_pc+4; // EX must called after ID to avoid two b<cond.>s
