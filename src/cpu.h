@@ -8,6 +8,7 @@
 #include "typedef.h"
 #include "memory.h"
 #include "constant.h"
+#include "predictor.h"
 #include <vector>
 
 namespace riscv {
@@ -30,6 +31,10 @@ namespace riscv {
         dword_t MEM_WB_output, MEM_WB_rd;
         dword_t WB_reg, WB_rd;
 
+        // branch clear pipeline
+        enum {NONE,CLEAR_IF_ID,CLEAR_ID_EX}clearing_stat;
+        bool is_predicting_bit;
+        predictor pre;
 
         // stall handling
         enum STALL_STAT {
@@ -66,7 +71,6 @@ namespace riscv {
         // multiplexer
         dword_t multiplexer(dword_t reg_name,dword_t value,forwarding EX_EX,forwarding MEM_EX);
 
-//        const static byte_t STALL_IF=1,STALL_ID=1<<1,STALL_EX=1<<2,STALL_MEM=1<<3,STALL_WB=1<<4;
 
         void clockIn(bool go = true); // read inter-stage registers into stage registers
 

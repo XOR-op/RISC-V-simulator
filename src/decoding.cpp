@@ -57,9 +57,11 @@ inst::inst_t riscv::select_op(dword_t inst) {
             break;
         default:
             // error
-            throw std::logic_error("WRONG OPCODE");
+            rt=inst::NOP;
+            std::cerr<<"INVALID instruction detected. May be fatal or pre-fetched code"<<std::endl;
+//            throw std::logic_error("WRONG OPCODE");
     }
-    assert(rt!=inst::NOP);
+//    assert(rt!=inst::NOP);
     return rt;
 }
 dword_t riscv::b_decode(sgn_dword_t a) {
@@ -83,6 +85,10 @@ inst::inst_t riscv::select_jmp(dword_t inst) {
             return riscv::inst::JAL;
         case op::AUIPC:
             return riscv::inst::AUIPC;
+        case op::JALR:
+            return inst::JALR;
+        case op::BRANCH:
+            return inst::BEQ; // as a symbol, not really BEQ
         default:
             return riscv::inst::NOP;
     }
