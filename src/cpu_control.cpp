@@ -47,18 +47,21 @@ void cpu::run() {
         } else {
             assert(stall == STALL_EX);
         }
-        if (clearing_stat == CLEAR_IF_ID) {
+        if (clear_stat == CLEAR_IF_ID) {
             IF_ID_inst = inst::NOP;
+        } else if(clear_stat == CLEAR_IF_EX){
+            IF_ID_inst=inst::NOP;
+            ID_EX_op=inst::NOP;
+            ID_EX_r1=ID_EX_r2=ID_EX_rd=0;
         }
-        clearing_stat = NONE;
+        clear_stat = NONE;
     }
 }
 
 void cpu::clockIn(bool go) {
     if (!go)return;
     if (stall < STALL_ID) {
-        ID_inst = IF_ID_inst, ID_pc = IF_ID_pc;ID_is_jmp=IF_ID_is_jmp;
-        ID_ALU_saved_from_EX=EX_forward;
+        ID_inst = IF_ID_inst, ID_pc = IF_ID_pc;
     } else ID_inst = inst::HUG;
     EX_rA = multiplexer(ID_EX_r1, ID_EX_rA, EX_forward, MEM_forward);
     EX_rB = multiplexer(ID_EX_r2, ID_EX_rB, EX_forward, MEM_forward);
@@ -67,7 +70,8 @@ void cpu::clockIn(bool go) {
         MEM_op = EX_MEM_op, MEM_rd = EX_MEM_rd, MEM_value = EX_MEM_ALU_output, MEM_rB = EX_MEM_rB;
     } else MEM_op = inst::HUG;
     if (stall < STALL_EX) {
-        EX_op = ID_EX_op, EX_rd = ID_EX_rd, EX_imm = ID_EX_imm, EX_pc = ID_EX_pc;
+        EX_is_jmp=ID_EX_is_jmp;
+        EX_op = ID_EX_op, EX_rd = ID_EX_rd, EX_imm = ID_EX_imm, EX_pc = ID_EX_pc;EX_is_jmp=ID_EX_is_jmp;
     } else {
         EX_op = inst::HUG;
         if (stall_info == RAL_STALL) {

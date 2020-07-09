@@ -13,9 +13,9 @@ const static dword_t IMM_U_MASK = 0xfffffu << 12u;
 bool r1_table[]{[inst::LUI]=false, [inst::AUIPC]=false, [inst::JAL]=false, [inst::JALR]=true, [inst::BEQ]=true, [inst::BNE]=true, [inst::BLT]=true, [inst::BGE]=true, [inst::BLTU]=true, [inst::BGEU]=true, [inst::LB]=true, [inst::LH]=true, [inst::LW]=true, [inst::LBU]=true, [inst::LHU]=true, [inst::ADDI]=true, [inst::SLTI]=true, [inst::SLTIU]=true, [inst::XORI]=true, [inst::ORI]=true, [inst::ANDI]=true, [inst::SB]=true, [inst::SH]=true, [inst::SW]=true, [inst::SLLI]=true, [inst::SRLI]=true, [inst::SRAI]=true, [inst::ADD]=true, [inst::SUB]=true, [inst::SLT]=true, [inst::SLTU]=true, [inst::XOR]=true, [inst::OR]=true, [inst::AND]=true, [inst::SLL]=true, [inst::SRL]=true, [inst::SRA]=true,};
 bool r2_table[]{[inst::LUI]=false, [inst::AUIPC]=false, [inst::JAL]=false, [inst::JALR]=false, [inst::BEQ]=true, [inst::BNE]=true, [inst::BLT]=true, [inst::BGE]=true, [inst::BLTU]=true, [inst::BGEU]=true, [inst::LB]=false, [inst::LH]=false, [inst::LW]=false, [inst::LBU]=false, [inst::LHU]=false, [inst::ADDI]=false, [inst::SLTI]=false, [inst::SLTIU]=false, [inst::XORI]=false, [inst::ORI]=false, [inst::ANDI]=false, [inst::SB]=true, [inst::SH]=true, [inst::SW]=true, [inst::SLLI]=false, [inst::SRLI]=false, [inst::SRAI]=false, [inst::ADD]=true, [inst::SUB]=true, [inst::SLT]=true, [inst::SLTU]=true, [inst::XOR]=true, [inst::OR]=true, [inst::AND]=true, [inst::SLL]=true, [inst::SRL]=true, [inst::SRA]=true,};
 bool rd_table[]{[inst::LUI]=true, [inst::AUIPC]=true, [inst::JAL]=true, [inst::JALR]=true, [inst::BEQ]=false, [inst::BNE]=false, [inst::BLT]=false, [inst::BGE]=false, [inst::BLTU]=false, [inst::BGEU]=false, [inst::LB]=true, [inst::LH]=true, [inst::LW]=true, [inst::LBU]=true, [inst::LHU]=true, [inst::ADDI]=true, [inst::SLTI]=true, [inst::SLTIU]=true, [inst::XORI]=true, [inst::ORI]=true, [inst::ANDI]=true, [inst::SB]=false, [inst::SH]=false, [inst::SW]=false, [inst::SLLI]=true, [inst::SRLI]=true, [inst::SRAI]=true, [inst::ADD]=true, [inst::SUB]=true, [inst::SLT]=true, [inst::SLTU]=true, [inst::XOR]=true, [inst::OR]=true, [inst::AND]=true, [inst::SLL]=true, [inst::SRL]=true, [inst::SRA]=true,};
-char imm_table[]{[inst::LUI]='U', [inst::AUIPC]='U', [inst::JAL]='J', [inst::JALR]='I', [inst::BEQ]='B', [inst::BNE]='B', [inst::BLT]='B', [inst::BGE]='B', [inst::BLTU]='B', [inst::BGEU]='B', [inst::LB]='I', [inst::LH]='I', [inst::LW]='I', [inst::LBU]='I', [inst::LHU]='I', [inst::ADDI]='I', [inst::SLTI]='I', [inst::SLTIU]='I', [inst::XORI]='I', [inst::ORI]='I', [inst::ANDI]='I', [inst::SB]='S', [inst::SH]='S', [inst::SW]='S', [inst::SLLI]='T', [inst::SRLI]='T', [inst::SRAI]='T', [inst::ADD]='R', [inst::SUB]='R', [inst::SLT]='R', [inst::SLTU]='R', [inst::XOR]='R', [inst::OR]='R', [inst::AND]='R', [inst::SLL]='R', [inst::SRL]='R', [inst::SRA]='R',[inst::END_I]='R'};
+char imm_table[]{[inst::LUI]='U', [inst::AUIPC]='U', [inst::JAL]='J', [inst::JALR]='I', [inst::BEQ]='B', [inst::BNE]='B', [inst::BLT]='B', [inst::BGE]='B', [inst::BLTU]='B', [inst::BGEU]='B', [inst::LB]='I', [inst::LH]='I', [inst::LW]='I', [inst::LBU]='I', [inst::LHU]='I', [inst::ADDI]='I', [inst::SLTI]='I', [inst::SLTIU]='I', [inst::XORI]='I', [inst::ORI]='I', [inst::ANDI]='I', [inst::SB]='S', [inst::SH]='S', [inst::SW]='S', [inst::SLLI]='T', [inst::SRLI]='T', [inst::SRAI]='T', [inst::ADD]='R', [inst::SUB]='R', [inst::SLT]='R', [inst::SLTU]='R', [inst::XOR]='R', [inst::OR]='R', [inst::AND]='R', [inst::SLL]='R', [inst::SRL]='R', [inst::SRA]='R', [inst::END_I]='R'};
 bool access_mem_table[]{[inst::LUI]=false, [inst::AUIPC]=false, [inst::JAL]=false, [inst::JALR]=false, [inst::BEQ]=false, [inst::BNE]=false, [inst::BLT]=false, [inst::BGE]=false, [inst::BLTU]=false, [inst::BGEU]=false, [inst::LB]=true, [inst::LH]=true, [inst::LW]=true, [inst::LBU]=true, [inst::LHU]=true, [inst::ADDI]=false, [inst::SLTI]=false, [inst::SLTIU]=false, [inst::XORI]=false, [inst::ORI]=false, [inst::ANDI]=false, [inst::SB]=true, [inst::SH]=true, [inst::SW]=true, [inst::SLLI]=false, [inst::SRLI]=false, [inst::SRAI]=false, [inst::ADD]=false, [inst::SUB]=false, [inst::SLT]=false, [inst::SLTU]=false, [inst::XOR]=false, [inst::OR]=false, [inst::AND]=false, [inst::SLL]=false, [inst::SRL]=false, [inst::SRA]=false,};
-char branch_table[]{[inst::LUI]=false,[inst::AUIPC]=false,[inst::JAL]=false,[inst::JALR]=false,[inst::BEQ]=true,[inst::BNE]=true,[inst::BLT]=true,[inst::BGE]=true,[inst::BLTU]=true,[inst::BGEU]=true,[inst::LB]=false,[inst::LH]=false,[inst::LW]=false,[inst::LBU]=false,[inst::LHU]=false,[inst::ADDI]=false,[inst::SLTI]=false,[inst::SLTIU]=false,[inst::XORI]=false,[inst::ORI]=false,[inst::ANDI]=false,[inst::SB]=false,[inst::SH]=false,[inst::SW]=false,[inst::SLLI]=false,[inst::SRLI]=false,[inst::SRAI]=false,[inst::ADD]=false,[inst::SUB]=false,[inst::SLT]=false,[inst::SLTU]=false,[inst::XOR]=false,[inst::OR]=false,[inst::AND]=false,[inst::SLL]=false,[inst::SRL]=false,[inst::SRA]=false,[inst::END_I]=true};
+char branch_table[]{[inst::LUI]=false, [inst::AUIPC]=false, [inst::JAL]=false, [inst::JALR]=false, [inst::BEQ]=true, [inst::BNE]=true, [inst::BLT]=true, [inst::BGE]=true, [inst::BLTU]=true, [inst::BGEU]=true, [inst::LB]=false, [inst::LH]=false, [inst::LW]=false, [inst::LBU]=false, [inst::LHU]=false, [inst::ADDI]=false, [inst::SLTI]=false, [inst::SLTIU]=false, [inst::XORI]=false, [inst::ORI]=false, [inst::ANDI]=false, [inst::SB]=false, [inst::SH]=false, [inst::SW]=false, [inst::SLLI]=false, [inst::SRLI]=false, [inst::SRAI]=false, [inst::ADD]=false, [inst::SUB]=false, [inst::SLT]=false, [inst::SLTU]=false, [inst::XOR]=false, [inst::OR]=false, [inst::AND]=false, [inst::SLL]=false, [inst::SRL]=false, [inst::SRA]=false, [inst::END_I]=false};
 
 const static dword_t TEST_ = 0xffffffff;
 
@@ -31,43 +31,7 @@ void cpu::IF_stage() {
     ss >> str;
     inst_history.emplace_back(str);
 #endif
-    dword_t rsl = select_jmp(IF_ID_inst);
-    if (rsl != inst::NOP) {
-        // jmp or branch
-        if(is_predicting_bit){
-            IF_ID_inst=inst::NOP;
-            return; // bubble
-        }
-        IF_INNER_r1 = r1_table[rsl] ? (IF_ID_inst & RS1_MASK) >> 15 : 0;
-        IF_INNER_r2 = r2_table[rsl] ? (IF_ID_inst & RS2_MASK) >> 20 : 0;
-        using namespace inst;
-        switch (rsl) {
-            case JAL:
-                pc += j_decode(IF_ID_inst);
-                assert(pc <= 0x20000);
-                break;
-            case AUIPC:
-                pc += IF_ID_inst & IMM_U_MASK;
-                break;
-            case JALR:
-                is_predicting_bit= true;
-                break;
-            case BEQ: // as a symbol of branch
-            {
-                is_predicting_bit = true;
-                dword_t new_pc = pre.predict(pc);
-                if (new_pc != pc+4)
-                    IF_ID_is_jmp = true;
-                pc=new_pc;
-            }
-                break;
-            case END_I:
-                break; // do not change PC
-            default:
-                assert(0);
-        }
-    } else
-        pc += 4;
+    pc += 4;
 }
 
 
@@ -78,9 +42,8 @@ void cpu::ID_stage() {
         return;
     }
     ID_EX_op = select_op(ID_inst);
-//    assert(ID_EX_op);
-    if(ID_EX_op==inst::NOP){
-        ID_EX_r1=ID_EX_r2=ID_EX_rd=0;
+    if (ID_EX_op == inst::NOP) {
+        ID_EX_r1 = ID_EX_r2 = ID_EX_rd = 0;
         return;
     }
     ID_EX_r1 = r1_table[ID_EX_op] ? (ID_inst & RS1_MASK) >> 15 : 0;
@@ -116,71 +79,83 @@ void cpu::ID_stage() {
         default:
             throw std::logic_error("WRONG DECODE TYPE");
     }
-    if(ID_EX_op==inst::JALR){
-        is_predicting_bit= false;
-        pc = (ID_EX_rA+ID_EX_imm)&0xfffffffe;
-        clearing_stat= CLEAR_IF_ID;
-    }
-    //branch
-    if(branch_table[ID_EX_op]&&ID_EX_op!=inst::END_I) {
-        bool hit = false;
-        is_predicting_bit = false;
-        ID_EX_rA=multiplexer(ID_EX_r1,ID_EX_rA,ID_ALU_saved_from_EX,ID_ALU_saved_from_EX);
-        ID_EX_rB=multiplexer(ID_EX_r2,ID_EX_rB,ID_ALU_saved_from_EX,ID_ALU_saved_from_EX);
+
+    if (ID_EX_op == inst::JAL || ID_EX_op == inst::AUIPC || branch_table[ID_EX_op]) {
+        // jmp or branch
+        using namespace inst;
         switch (ID_EX_op) {
-            using namespace inst;
-            case BEQ: {
-                if (ID_EX_rA == ID_EX_rB)hit = true;
-            }
+            case JAL:
+                pc = ID_pc+ID_EX_imm;
+                clear_stat = CLEAR_IF_ID;
+                assert(pc <= 0x20000);
                 break;
-            case BNE: {
-                if (ID_EX_rA != ID_EX_rB)hit = true;
-            }
+            case AUIPC:
+                pc = ID_pc+ID_EX_imm;
+                clear_stat = CLEAR_IF_ID;
                 break;
-            case BLT: {
-                if ((sgn_dword_t) ID_EX_rA < (sgn_dword_t) ID_EX_rB)hit = true;
-            }
-                break;
-            case BGE: {
-                if ((sgn_dword_t) ID_EX_rA >= (sgn_dword_t) ID_EX_rB)hit = true;
-            }
-                break;
-            case BLTU: {
-                if (ID_EX_rA < ID_EX_rB)hit = true;
-            }
-                break;
+            case BEQ:
+            case BNE:
+            case BLT:
+            case BLTU:
+            case BGE:
             case BGEU: {
-                if (ID_EX_rA >= ID_EX_rB)hit = true;
+                ID_EX_is_jmp_bit = pre.predict(ID_pc);
+                if (ID_EX_is_jmp_bit) {
+                    pc = ID_pc+ID_EX_imm;
+                    clear_stat = CLEAR_IF_ID;
+                }
             }
                 break;
+            case END_I:
+                break; // do not change PC
             default:
                 assert(0);
         }
-        ID_EX_op=inst::NOP;
-        if (hit ^ ID_is_jmp) {
-            // wrong
-            clearing_stat = CLEAR_IF_ID;
-            pc = hit ? ID_EX_pc+ID_EX_imm : ID_EX_pc+4;
-        }
     }
-    ID_ALU_saved_from_EX.reset();
+
 }
 
 
 void cpu::EX_stage() {
     using namespace inst;
 //    if (EX_op == HUG)return;else
-    if (EX_op == NOP||EX_op==HUG) {
+    if (EX_op == NOP || EX_op == HUG) {
         EX_MEM_op = NOP;
-        EX_MEM_rd=0;
+        EX_MEM_rd = 0;
         return;
-    }else if(EX_op==END_I){
-        EX_MEM_op=END_I;
+    } else if (EX_op == END_I) {
+        EX_MEM_op = END_I;
         return;
     }
+    bool hit = false;
+    ID_EX_is_jmp_bit = false;
     switch (EX_op) {
         case LUI: {
             EX_MEM_ALU_output = EX_imm;
+        }
+            break;
+        case BEQ: {
+            if (EX_rA == EX_rB)hit = true;
+        }
+            break;
+        case BNE: {
+            if (EX_rA != EX_rB)hit = true;
+        }
+            break;
+        case BLT: {
+            if ((sgn_dword_t) EX_rA < (sgn_dword_t) EX_rB)hit = true;
+        }
+            break;
+        case BGE: {
+            if ((sgn_dword_t) EX_rA >= (sgn_dword_t) EX_rB)hit = true;
+        }
+            break;
+        case BLTU: {
+            if (EX_rA < EX_rB)hit = true;
+        }
+            break;
+        case BGEU: {
+            if (EX_rA >= EX_rB)hit = true;
         }
             break;
         case AUIPC: {
@@ -192,6 +167,8 @@ void cpu::EX_stage() {
         }
             break;
         case JALR: {
+            pc = (EX_rA+EX_imm) & 0xfffffffe;
+            clear_stat = CLEAR_IF_EX;
             EX_MEM_ALU_output = EX_pc+4;
         }
             break;
@@ -309,10 +286,17 @@ void cpu::EX_stage() {
         default:
             throw std::logic_error("WRONG OP!");
     }
+    if (branch_table[EX_op] && EX_op != END_I) {
+        if (hit ^ EX_is_jmp) {
+            // wrong
+            clear_stat = CLEAR_IF_EX;
+            pc = hit ? EX_pc+EX_imm : EX_pc+4; // EX must called after ID to avoid two b<cond.>s
+        }
+    }
     EX_MEM_op = EX_op;
     EX_MEM_rd = EX_rd;
     EX_MEM_rB = EX_rB;
-    if (EX_rd&&!access_mem_table[EX_op])
+    if (EX_rd && !access_mem_table[EX_op])
         EX_forward.set(EX_MEM_rd, EX_MEM_ALU_output);
 }
 
@@ -392,10 +376,11 @@ void cpu::MEM_stage() {
                 MEM_INNER_rB = MEM_rB;
                 MEM_INNER_rd = MEM_rd;
                 MEM_INNER_op = MEM_op;
+
                 assert(MEM_value <= 0x20000);
                 MEM_INNER_loc = MEM_value;
                 MEM_ACCESS_counter = 2;
-                stall_request(STALL_EX, MEM_WAIT,2);
+                stall_request(STALL_EX, MEM_WAIT, 2);
                 MEM_WB_op = inst::NOP;
                 break;
             default:
@@ -410,7 +395,7 @@ void cpu::WB_stage() {
     if (WB_op == NOP || WB_op == HUG)return;
     switch (WB_op) {
         case inst::END_I:
-            timeout=0;
+            timeout = 0;
             break;
         case LUI:
         case AUIPC:
@@ -450,7 +435,8 @@ void cpu::WB_stage() {
 }
 
 
-cpu::cpu(struct memory* mem_ptr) {
+cpu::cpu(
+        struct memory* mem_ptr) {
     memory = mem_ptr;
     pc = 0;
     memset(registers, -1, sizeof(registers));
@@ -460,6 +446,7 @@ cpu::cpu(struct memory* mem_ptr) {
 
 dword_t cpu::multiplexer(dword_t reg_name, dword_t value, cpu::forwarding EX_EX, cpu::forwarding MEM_EX) {
 //    assert(EX_EX.reg_name == 0 || EX_EX.reg_name != MEM_EX.reg_name);
-    return reg_name == 0 ? 0 : EX_EX.reg_name == reg_name ? EX_EX.value : (MEM_EX.reg_name == reg_name ? MEM_EX.value
-                                                                                                        : value);
+    return reg_name == 0 ? 0 : EX_EX.reg_name == reg_name ? EX_EX.value : (MEM_EX.reg_name == reg_name
+                                                                           ? MEM_EX.value
+                                                                           : value);
 }

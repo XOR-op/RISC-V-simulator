@@ -59,7 +59,9 @@ inst::inst_t riscv::select_op(dword_t inst) {
         default:
             // error
             rt=inst::NOP;
+#ifndef N_DEBUG
             std::cerr<<"INVALID instruction detected. May be fatal or pre-fetched code"<<std::endl;
+#endif
 //            throw std::logic_error("WRONG OPCODE");
     }
 //    assert(rt!=inst::NOP);

@@ -21,11 +21,10 @@ namespace riscv {
         dword_t registers[32];
         dword_t pc;
         inst::inst_t ID_EX_op,EX_MEM_op,MEM_WB_op,EX_op,MEM_op,WB_op,MEM_INNER_op;
-        dword_t IF_INNER_r1,IF_INNER_r2;
-        dword_t IF_ID_inst, IF_ID_pc,IF_ID_is_jmp;
-        dword_t  ID_inst,ID_pc,ID_is_jmp;
-        dword_t  ID_EX_rA, ID_EX_rB, ID_EX_imm, ID_EX_rd, ID_EX_pc,ID_EX_r1,ID_EX_r2;
-        dword_t  EX_rA, EX_rB, EX_imm, EX_rd, EX_pc;
+        dword_t IF_ID_inst, IF_ID_pc;
+        dword_t  ID_inst,ID_pc;
+        dword_t  ID_EX_rA, ID_EX_rB, ID_EX_imm, ID_EX_rd, ID_EX_pc,ID_EX_r1,ID_EX_r2,ID_EX_is_jmp;
+        dword_t  EX_rA, EX_rB, EX_imm, EX_rd, EX_pc,EX_is_jmp;
         dword_t  EX_MEM_ALU_output, EX_MEM_rd, EX_MEM_rB;
         dword_t  MEM_value, MEM_rd, MEM_rB;
         dword_t MEM_INNER_rd,MEM_INNER_rB,MEM_INNER_loc,MEM_ACCESS_counter=0;
@@ -33,8 +32,8 @@ namespace riscv {
         dword_t WB_reg, WB_rd;
 
         // branch clear pipeline
-        enum {NONE,CLEAR_IF_ID,CLEAR_ID_EX}clearing_stat;
-        bool is_predicting_bit;
+        enum {NONE,CLEAR_IF_ID,CLEAR_IF_EX}clear_stat;
+        bool ID_EX_is_jmp_bit;
         predictor pre;
 
         // stall handling
@@ -67,7 +66,7 @@ namespace riscv {
             dword_t value;
             void set(dword_t n, dword_t v) { reg_name = n, value = v; }
             void reset() { reg_name = 0;value=0; }
-        }EX_forward,MEM_forward,ID_ALU_saved_from_EX;
+        }EX_forward,MEM_forward;
 
         // multiplexer
         dword_t multiplexer(dword_t reg_name,dword_t value,forwarding EX_EX,forwarding MEM_EX);

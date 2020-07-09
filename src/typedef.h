@@ -7,7 +7,7 @@
 #include <iostream>
 #include <exception>
 namespace riscv{
-//#define N_DEBUG
+#define N_DEBUG
     typedef uint8_t byte_t;
     typedef uint32_t dword_t;
     typedef int32_t sgn_dword_t;

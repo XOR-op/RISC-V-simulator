@@ -8,7 +8,7 @@
 #include "typedef.h"
 namespace riscv{
     struct predictor{
-        dword_t predict(dword_t cur_pc){return cur_pc+4;}
+        bool predict(dword_t cur_pc){return true;}
     };
 }
 #endif //RISC_V_SIMULATOR_PREDICTOR_H
