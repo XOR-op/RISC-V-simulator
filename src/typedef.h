@@ -6,6 +6,8 @@
 #define RISC_V_SIMULATOR_TYPEDEF_H
 #include <iostream>
 #include <exception>
+#include <cassert>
+#include <cstring>
 namespace riscv{
 #define N_DEBUG
     typedef uint8_t byte_t;
