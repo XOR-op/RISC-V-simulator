@@ -13,16 +13,17 @@
 
 namespace riscv {
     struct cpu {
-        const static dword_t END_INST=0x0ff00513;
-//        const static dword_t END_INST=0x00c68223;
-        int timeout=5; // finish timeout
+        std::vector<std::string> inst_history;
+        int counter = 0;
+        int timeout=1; // finish timeout
         memory* memory;
         // registers *r1=rA, *r2=rB
         dword_t registers[32];
         dword_t pc;
         inst::inst_t ID_EX_op,EX_MEM_op,MEM_WB_op,EX_op,MEM_op,WB_op,MEM_INNER_op;
-        dword_t IF_ID_inst, IF_ID_pc;
-        dword_t  ID_inst,ID_pc;
+        dword_t IF_INNER_r1,IF_INNER_r2;
+        dword_t IF_ID_inst, IF_ID_pc,IF_ID_is_jmp;
+        dword_t  ID_inst,ID_pc,ID_is_jmp;
         dword_t  ID_EX_rA, ID_EX_rB, ID_EX_imm, ID_EX_rd, ID_EX_pc,ID_EX_r1,ID_EX_r2;
         dword_t  EX_rA, EX_rB, EX_imm, EX_rd, EX_pc;
         dword_t  EX_MEM_ALU_output, EX_MEM_rd, EX_MEM_rB;
@@ -66,7 +67,7 @@ namespace riscv {
             dword_t value;
             void set(dword_t n, dword_t v) { reg_name = n, value = v; }
             void reset() { reg_name = 0;value=0; }
-        }EX_forward,MEM_forward;
+        }EX_forward,MEM_forward,ID_ALU_saved_from_EX;
 
         // multiplexer
         dword_t multiplexer(dword_t reg_name,dword_t value,forwarding EX_EX,forwarding MEM_EX);
@@ -89,8 +90,6 @@ namespace riscv {
 
         explicit cpu(struct memory* mem_ptr);
 
-        std::vector<std::string> inst_history;
-        int counter = 0;
     };
 }
 #endif //RISC_V_SIMULATOR_CPU_H

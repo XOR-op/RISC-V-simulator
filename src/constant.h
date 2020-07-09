@@ -5,6 +5,7 @@
 #ifndef RISC_V_SIMULATOR_CONSTANT_H
 #define RISC_V_SIMULATOR_CONSTANT_H
 namespace riscv{
+    const static dword_t END_INST=0x0ff00513;
     namespace op{
         enum op{
             LUI=0b0110111,
@@ -61,8 +62,12 @@ namespace riscv{
             LB,LH,LW,LBU,LHU,
             SB,SH,SW,
             ADDI,SLLI,SLTI,SLTIU,XORI,SRLI,SRAI,ORI,ANDI,
-            ADD,SUB,SLL,SLT,SLTU,XOR,SRL,SRA,OR,AND
+            ADD,SUB,SLL,SLT,SLTU,XOR,SRL,SRA,OR,AND,
+            END_I
         };
+    }
+    static bool match(dword_t a,dword_t b,dword_t target){
+        return target!=0&&(target==a||target==b);
     }
 }
 #endif //RISC_V_SIMULATOR_CONSTANT_H

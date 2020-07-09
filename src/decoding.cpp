@@ -10,6 +10,7 @@ const static dword_t FUNCT7_MASK = 0b1111111u << 25u;
 const static dword_t IMM_I_MASK = 0xfffu << 20u;
 inst::inst_t riscv::select_op(dword_t inst) {
     inst::inst_t rt=inst::NOP;
+    if(inst==END_INST)return inst::END_I;
     dword_t ID_opcode = inst & OPCODE_MASK;
     dword_t ID_funct3 = (inst & FUNCT3_MASK) >> 12;
     dword_t ID_funct7 = (inst & FUNCT7_MASK) >> 25;
