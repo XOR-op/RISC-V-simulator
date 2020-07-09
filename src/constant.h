@@ -60,9 +60,10 @@ namespace riscv{
             LUI,AUIPC,JAL,JALR,
             BEQ,BNE,BLT,BGE,BLTU,BGEU,
             LB,LH,LW,LBU,LHU,
+            ADDI,SLTI,SLTIU,XORI,ORI,ANDI,
             SB,SH,SW,
-            ADDI,SLLI,SLTI,SLTIU,XORI,SRLI,SRAI,ORI,ANDI,
-            ADD,SUB,SLL,SLT,SLTU,XOR,SRL,SRA,OR,AND,
+            SLLI,SRLI,SRAI,
+            ADD,SUB,SLT,SLTU,XOR,OR,AND,SLL,SRL,SRA,
             END_I
         };
     }
