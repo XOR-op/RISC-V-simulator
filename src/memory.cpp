@@ -1,6 +1,3 @@
-//
-// Created by Vortox Oganesson on 7/6/20.
-//
 #include "memory.h"
 #include <string.h>
 #include <cstdlib>

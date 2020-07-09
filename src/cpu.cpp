@@ -1,6 +1,3 @@
-//
-// Created by Vortox Oganesson on 7/6/20.
-//
 #include "cpu.h"
 #include "constant.h"
 #include "decoding.h"
@@ -34,11 +31,11 @@ void cpu::IF_stage() {
     IF_ID_inst = mem->read32(pc);
     IF_ID_pc = pc;
 #ifndef N_DEBUG
-    std::stringstream ss;
-    std::string str;
-    ss << std::hex << IF_ID_inst;
-    ss >> str;
-    inst_history.emplace_back(str);
+//    std::stringstream ss;
+//    std::string str;
+//    ss << std::hex << IF_ID_inst;
+//    ss >> str;
+//    inst_history.emplace_back(str);
 #endif
     pc += 4;
 }

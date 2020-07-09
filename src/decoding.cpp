@@ -1,6 +1,3 @@
-//
-// Created by Vortox Oganesson on 7/7/20.
-//
 #include "decoding.h"
 #include "constant.h"
 #include <unordered_map>

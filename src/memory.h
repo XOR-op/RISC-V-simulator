@@ -1,7 +1,3 @@
-//
-// Created by Vortox Oganesson on 7/6/20.
-//
-
 #ifndef RISC_V_SIMULATOR_MEMORY_H
 #define RISC_V_SIMULATOR_MEMORY_H
 

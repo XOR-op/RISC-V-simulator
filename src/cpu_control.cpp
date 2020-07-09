@@ -1,6 +1,3 @@
-//
-// Created by Vortox Oganesson on 7/9/20.
-//
 #include "cpu.h"
 
 using namespace riscv;
