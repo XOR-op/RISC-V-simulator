@@ -22,7 +22,7 @@ const static dword_t TEST_ = 0xffffffff;
 void cpu::IF_stage() {
     assert(pc <= 0x20000);
     assert(registers[0] == 0);
-    IF_ID_inst = memory->read32(pc);
+    IF_ID_inst = mem->read32(pc);
     IF_ID_pc = pc;
 #ifndef N_DEBUG
     std::stringstream ss;
@@ -316,35 +316,35 @@ void cpu::MEM_stage() {
             MEM_value = MEM_INNER_loc;
             switch (MEM_WB_op) {
                 case LB: {
-                    MEM_WB_output = memory->read8s(MEM_value);
+                    MEM_WB_output = mem->read8s(MEM_value);
                 }
                     break;
                 case LH: {
-                    MEM_WB_output = memory->read16s(MEM_value);
+                    MEM_WB_output = mem->read16s(MEM_value);
                 }
                     break;
                 case LW: {
-                    MEM_WB_output = memory->read32s(MEM_value);
+                    MEM_WB_output = mem->read32s(MEM_value);
                 }
                     break;
                 case LBU: {
-                    MEM_WB_output = memory->read8(MEM_value);
+                    MEM_WB_output = mem->read8(MEM_value);
                 }
                     break;
                 case LHU: {
-                    MEM_WB_output = memory->read16(MEM_value);
+                    MEM_WB_output = mem->read16(MEM_value);
                 }
                     break;
                 case SB: {
-                    memory->write8(MEM_value, MEM_INNER_rB & 0xff);
+                    mem->write8(MEM_value, MEM_INNER_rB & 0xff);
                 }
                     break;
                 case SH: {
-                    memory->write16(MEM_value, MEM_INNER_rB & 0xffff);
+                    mem->write16(MEM_value, MEM_INNER_rB & 0xffff);
                 }
                     break;
                 case SW: {
-                    memory->write32(MEM_value, MEM_INNER_rB);
+                    mem->write32(MEM_value, MEM_INNER_rB);
                 }
                     break;
                 default:
@@ -437,7 +437,7 @@ void cpu::WB_stage() {
 
 cpu::cpu(
         struct memory* mem_ptr) {
-    memory = mem_ptr;
+    mem = mem_ptr;
     pc = 0;
     memset(registers, -1, sizeof(registers));
     registers[0] = 0;

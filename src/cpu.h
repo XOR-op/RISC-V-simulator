@@ -16,7 +16,7 @@ namespace riscv {
         std::vector<std::string> inst_history;
         int counter = 0;
         int timeout=1; // finish timeout
-        memory* memory;
+        memory* mem;
         // registers *r1=rA, *r2=rB
         dword_t registers[32];
         dword_t pc;
