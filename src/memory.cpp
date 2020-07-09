@@ -7,7 +7,7 @@
 #include <cassert>
 using namespace riscv;
 void memory::open(std::istream& is) {
-    bzero(mem, sizeof(mem));
+    memset(mem,0, sizeof(mem));
     int cur = 0, tmp;
     std::string buf;
     while (std::getline(is, buf)) {
