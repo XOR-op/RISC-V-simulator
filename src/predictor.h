@@ -28,6 +28,9 @@ namespace riscv{
             }
         }
         double tell()const {return total_cnt?(double )hit_cnt/(double )total_cnt:0.0;}
+        predictor(){
+            memset(two_bit,0,sizeof(two_bit));
+        }
     };
 }
 #endif //RISC_V_SIMULATOR_PREDICTOR_H

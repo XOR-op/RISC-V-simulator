@@ -19,11 +19,11 @@ namespace riscv {
         memory* mem;
         // registers *r1=rA, *r2=rB
         dword_t registers[32];
-        dword_t pc;
+        dword_t pc=0;
         inst::inst_t ID_EX_op,EX_MEM_op,MEM_WB_op,EX_op,MEM_op,WB_op,MEM_INNER_op;
         dword_t IF_ID_inst, IF_ID_pc;
         dword_t  ID_inst,ID_pc;
-        dword_t  ID_EX_rA, ID_EX_rB, ID_EX_imm, ID_EX_rd, ID_EX_pc,ID_EX_r1,ID_EX_r2;
+        dword_t  ID_EX_rA, ID_EX_rB, ID_EX_imm, ID_EX_rd, ID_EX_pc,ID_EX_r1=0,ID_EX_r2=0;
         dword_t  EX_rA, EX_rB, EX_imm, EX_rd, EX_pc;
         dword_t  EX_MEM_ALU_output, EX_MEM_rd, EX_MEM_rB;
         dword_t  MEM_value, MEM_rd, MEM_rB;
@@ -32,7 +32,7 @@ namespace riscv {
         dword_t WB_reg, WB_rd;
 
         // branch clear pipeline
-        enum {NONE,CLEAR_IF_ID,CLEAR_IF_EX}clear_stat;
+        enum {NONE,CLEAR_IF_ID,CLEAR_IF_EX}clear_stat=NONE;
         bool ID_EX_is_jmp_bit,EX_is_jmp_bit;
         predictor pre;
 
@@ -48,9 +48,9 @@ namespace riscv {
         int stall_counter = 0;
 
         struct stall_request_t {
-            STALL_STAT my_stall;
-            STALL_INFO info;
-            int my_stall_counter;
+            STALL_STAT my_stall=NO_STALL;
+            STALL_INFO info=NO;
+            int my_stall_counter=0;
             void operator()(STALL_STAT s,STALL_INFO i,int round){
                 my_stall=s;my_stall_counter=round;info=i;}
             void set(cpu* parent){
@@ -62,8 +62,8 @@ namespace riscv {
 
         // forwarding
         struct forwarding {
-            dword_t reg_name;
-            dword_t value;
+            dword_t reg_name=0;
+            dword_t value=0;
             void set(dword_t n, dword_t v) { reg_name = n, value = v; }
             void reset() { reg_name = 0;value=0; }
         }EX_forward,MEM_forward;

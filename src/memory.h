@@ -12,7 +12,7 @@
 #define NO_EXCEED assert(offset<=0x20000);
 namespace riscv {
     struct memory {
-        byte_t mem[0x20000+20];
+        byte_t mem[0x20000+50];
 
         void open(std::istream& is);
 

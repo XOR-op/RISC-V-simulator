@@ -9,7 +9,7 @@ using namespace riscv;
 int main() {
     memory mem;
 #ifndef N_DEBUG
-    ifstream ifs("../riscv-data/testcases/pi.data");
+    ifstream ifs("../riscv-data/testcases/array_test1.data");
     if(ifs.fail())throw std::runtime_error("File open failed");
     mem.open(ifs);
 #else
